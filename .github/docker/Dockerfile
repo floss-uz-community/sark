@@ -12,6 +12,7 @@ LABEL maintainer="Sokhibjon Orzikulov <sakhib@orzklv.uz>"
 # Ruby gems
 COPY Gemfile .
 
+# Persistent Packages
 RUN set -ex;                                                                               \
   tempPkgs='                                                                               \
   automake                                                                                 \
@@ -27,7 +28,6 @@ RUN set -ex;                                                                    
   apt-get update;                                                                          \
   apt-get install -q -y --no-install-recommends                                            \
   $tempPkgs                                                                                \
-  # persistent packages
   ca-certificates                                                                          \
   gdb-multiarch                                                                            \
   libpixman-1-dev                                                                          \
@@ -38,8 +38,11 @@ RUN set -ex;                                                                    
   python3-venv                                                                             \
   ruby                                                                                     \
   ruby-dev                                                                                 \
-  ;                                                                                        \
-  # GCC AArch64 tools
+  openocd                                                                                  \
+  ;
+
+# GCC Arm Toolchain
+RUN set -ex;                                                                               \
   if [ "$(uname -m)" = "aarch64" ]; then wget ${GCC_AARCH64}; else wget ${GCC_X86_64}; fi; \
   tar -xf gcc-arm-10*;                                                                     \
   cp                                                                                       \
@@ -47,12 +50,16 @@ RUN set -ex;                                                                    
   gcc-arm-10*/bin/aarch64-none-elf-readelf                                                 \
   gcc-arm-10*/bin/aarch64-none-elf-nm                                                      \
   /usr/local/bin/;                                                                         \
-  rm -rf gcc-arm-10*;                                                                      \
-  # Ruby dependencies
+  rm -rf gcc-arm-10*;
+
+# Ruby dependencies
+RUN set -ex;                                                                               \
   gem install bundler;                                                                     \
   bundle config set --local without 'development';                                         \
-  bundle install --retry 3;                                                                \
-  # QEMU
+  bundle install --retry 3;
+
+# QEMU
+RUN set -ex;                                                                               \
   git clone https://gitlab.com/qemu-project/qemu.git;                                      \
   cd qemu;                                                                                 \
   git checkout tags/v9.2.0;                                                                \
@@ -62,17 +69,25 @@ RUN set -ex;                                                                    
   make -j10;                                                                               \
   make install;                                                                            \
   cd ..;                                                                                   \
-  rm -rf qemu;                                                                             \
-  # Openocd
-  git clone --depth 1 https://git.code.sf.net/p/openocd/code openocd;                      \
-  cd openocd;                                                                              \
-  ./bootstrap;                                                                             \
-  ./configure --enable-ftdi;                                                               \
-  make -j10;                                                                               \
-  make install;                                                                            \
-  # GDB
-  wget -P ~ git.io/.gdbinit;                                                               \
-  # Cleanup
+  rm -rf qemu;
+
+# GDB
+RUN set -ex;                                                                               \
+  wget -P ~ git.io/.gdbinit;
+
+# Cleanup
+RUN set -ex;                                                                               \
+  tempPkgs='                                                                               \
+  automake                                                                                 \
+  bison                                                                                    \
+  build-essential                                                                          \
+  flex                                                                                     \
+  git                                                                                      \
+  libtool                                                                                  \
+  ninja-build                                                                              \
+  pkg-config                                                                               \
+  wget                                                                                     \
+  ';                                                                                       \
   apt-get purge -y --auto-remove $tempPkgs;                                                \
   apt-get autoremove -q -y;                                                                \
   apt-get clean -q -y;                                                                     \

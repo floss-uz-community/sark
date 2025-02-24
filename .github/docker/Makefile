@@ -6,16 +6,26 @@ default: local
 
 local:
 	cp ../../Gemfile .
-	docker build                                           \
-	    --tag ghcr.io/kibertexnik/sark-dev:$(TAG)              \
+	docker build                                               \
+	    --no-cache                                             \
+			--tag ghcr.io/kibertexnik/sark-dev:$(TAG)              \
 	    --build-arg VCS_REF=`git rev-parse --short HEAD` .
 	rm Gemfile
 
+local-cache:
+	cp ../../Gemfile .
+	docker build                                               \
+			--tag ghcr.io/kibertexnik/sark-dev:$(TAG)              \
+	    --build-arg VCS_REF=`git rev-parse --short HEAD` .
+	rm Gemfile
+
+
 push:
 	cp ../../Gemfile .
-	docker buildx build                                    \
-	    --push                                             \
-	    --platform linux/arm64/v8,linux/amd64              \
+	docker buildx build                                        \
+	    --no-cache                                             \
+	    --push                                                 \
+	    --platform linux/arm64/v8,linux/amd64                  \
 	    --tag ghcr.io/kibertexnik/sark-dev:$(TAG)              \
 	    --build-arg VCS_REF=`git rev-parse --short HEAD` .
 	rm Gemfile
